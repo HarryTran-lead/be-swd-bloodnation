@@ -1,14 +1,30 @@
-# Stage 1: Build
+# Base image: runtime
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+# Build image: SDK
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY BloodDonation-SWD.csproj .
-RUN dotnet restore BloodDonation-SWD.csproj
-COPY . .
-RUN dotnet publish BloodDonation-SWD.csproj -c Release -o /app/publish
 
-# Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS runtime
+# Copy file csproj đúng đường dẫn
+COPY BloodDonation-SWD/BloodDonation-SWD.csproj BloodDonation-SWD/
+
+# Restore dependencies
+RUN dotnet restore BloodDonation-SWD/BloodDonation-SWD.csproj
+
+# Copy toàn bộ source code
+COPY . .
+
+# Publish app (build) trong thư mục csproj
+WORKDIR /src/BloodDonation-SWD
+RUN dotnet publish -c Release -o /app/publish
+
+# Build final image
+FROM base AS final
 WORKDIR /app
+
+# Copy app đã build từ bước trước
 COPY --from=build /app/publish .
-EXPOSE 80
+
 ENTRYPOINT ["dotnet", "BloodDonation-SWD.dll"]
