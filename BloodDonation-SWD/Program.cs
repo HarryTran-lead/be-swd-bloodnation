@@ -3,26 +3,27 @@ using BloodDonation_SWD.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Log connection string
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("👉 Connection string: " + connStr);
+
 // Add services
 builder.Services.AddDbContext<BloodDonationContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connStr));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Thêm CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
     });
 });
 
-// Lấy port từ Render
+// Dùng PORT từ Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://*:{port}");
 
@@ -34,16 +35,27 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-// Thêm CORS middleware
+// app.UseHttpsRedirection(); // tạm tắt nếu gặp lỗi cổng HTTPS
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+// Tự động migrate
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BloodDonationContext>();
+    db.Database.Migrate();
+}
 
-var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine("👉 Connection string: " + connStr);
+// Bọc app.Run trong try-catch
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine(" ERROR during app startup: " + ex.Message);
+    throw;
+}
