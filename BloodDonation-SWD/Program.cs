@@ -11,6 +11,8 @@ Console.WriteLine("👉 Connection string: " + connStr);
 builder.Services.AddDbContext<BloodDonationContext>(options =>
     options.UseSqlServer(connStr));
 
+
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
