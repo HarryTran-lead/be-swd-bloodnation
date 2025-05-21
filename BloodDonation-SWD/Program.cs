@@ -45,3 +45,5 @@ app.MapControllers();
 
 app.Run();
 
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("👉 Connection string: " + connStr);
